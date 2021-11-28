@@ -2,9 +2,10 @@ package com.s24083.shoppinglistnotificator
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.content.IntentFilter
+import android.content.*
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -16,11 +17,26 @@ import android.view.MenuItem
 import androidx.core.app.NotificationManagerCompat
 import com.s24083.shoppinglistnotificator.databinding.ActivityMainBinding
 import com.s24083.shoppinglistnotificator.receivers.AddItemBroadcastReceiver
+import com.s24083.shoppinglistnotificator.services.ShoppingItemsService
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
+
+    private lateinit var mserv: ShoppingItemsService
+    private var mBound: Boolean = false
+
+    private val mcom = object: ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
+            val binder = service as ShoppingItemsService.MyBinder
+            mserv = binder.getService()
+            mBound = true
+        }
+        override fun onServiceDisconnected(name: ComponentName?) {
+            mBound = false
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,16 +50,29 @@ class MainActivity : AppCompatActivity() {
         appBarConfiguration = AppBarConfiguration(navController.graph)
         setupActionBarWithNavController(navController, appBarConfiguration)
 
-        binding.fab.setOnClickListener { view ->
-            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                .setAction("Action", null).show()
-        }
-
         val receiver = AddItemBroadcastReceiver()
         val filter = IntentFilter()
         filter.addAction("com.s24083.shoppinglist.ITEM_ADDED")
         registerReceiver(receiver, filter)
         createNotificationChannel()
+
+        val intent = Intent(this, ShoppingItemsService::class.java)
+        startService(intent)
+        bindService(intent, mcom, Context.BIND_AUTO_CREATE)
+
+        binding.fab.setOnClickListener { view ->
+            Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                .setAction("Action", null).show()
+            mserv.sentNewItemNotification(1, "hey")
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if(mBound){
+            unbindService(mcom)
+            mBound = false
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
