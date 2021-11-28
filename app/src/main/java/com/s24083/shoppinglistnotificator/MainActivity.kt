@@ -1,6 +1,9 @@
 package com.s24083.shoppinglistnotificator
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import com.google.android.material.snackbar.Snackbar
 import androidx.appcompat.app.AppCompatActivity
@@ -10,6 +13,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import android.view.Menu
 import android.view.MenuItem
+import androidx.core.app.NotificationManagerCompat
 import com.s24083.shoppinglistnotificator.databinding.ActivityMainBinding
 import com.s24083.shoppinglistnotificator.receivers.AddItemBroadcastReceiver
 
@@ -39,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         val filter = IntentFilter()
         filter.addAction("com.s24083.shoppinglist.ITEM_ADDED")
         registerReceiver(receiver, filter)
+        createNotificationChannel()
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -61,5 +66,20 @@ class MainActivity : AppCompatActivity() {
         val navController = findNavController(R.id.nav_host_fragment_content_main)
         return navController.navigateUp(appBarConfiguration)
                 || super.onSupportNavigateUp()
+    }
+
+    private fun createNotificationChannel(){
+        if(Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
+            return
+        // SDK >= 26
+        val notificationChannel = NotificationChannel(
+            getString(R.string.channelID),
+            getString(R.string.channel_name),
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        notificationChannel.description =
+            getString(R.string.channel_description)
+        val notificationManager = NotificationManagerCompat.from(this)
+        notificationManager.createNotificationChannel(notificationChannel)
     }
 }

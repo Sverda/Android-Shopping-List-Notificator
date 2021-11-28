@@ -5,19 +5,23 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import android.widget.Toast
-
-private const val TAG = "AddItemBroadcastReceiver"
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
+import com.s24083.shoppinglistnotificator.R
 
 class AddItemBroadcastReceiver : BroadcastReceiver() {
 
+    var id = 0
+
     override fun onReceive(context: Context, intent: Intent) {
-        StringBuilder().apply {
-            append("Action: ${intent.action}\n")
-            append("URI: ${intent.toUri(Intent.URI_INTENT_SCHEME)}\n")
-            toString().also { log ->
-                Log.d(TAG, log)
-                Toast.makeText(context, log, Toast.LENGTH_LONG).show()
-            }
+        var builder = NotificationCompat.Builder(context, context.getString(R.string.channelID))
+            .setSmallIcon(R.drawable.notification_icon)
+            .setContentTitle("New shopping item")
+            .setContentText("New shopping item has been created")
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        with(NotificationManagerCompat.from(context)) {
+            // notificationId is a unique int for each notification that you must define
+            notify(id++, builder.build())
         }
     }
 }
